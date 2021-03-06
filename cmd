@@ -1,17 +1,18 @@
 #!/bin/bash
 
-CMD_MINECRAFT_SERVER=FeedTheBeast
+SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/cmd"
+CMD_MINECRAFT_SERVER=MinecraftServer #!!! DO NOT MODIFY THIS COMMENT
 
 help() {
 	echo "Help screen for Minecraft server remote cmd"
-	echo "To create an example script that would work with cmd, type cmd -s or --script"
+	echo "To create an example script that would work with cmd, type cmd -s or --setup"
 	echo -e "\nOptions:"
         echo -e "\t-b | --backup\t\t\t: Starts a forced backup."
 	echo -e "\t-c | --connect\t\t\t: Connects to the Minecraft server console."
 	echo -e "\t-d | --detach\t\t\t: Detaches the screen if something went wrong. Safe command, does not kill the process."
         echo -e "\t-h | --help\t\t\t: Shows this help screen"
         echo -e "\t-r | --restart (-f | --force)\t: Stops the server in 30 seconds. Use the --force option to force the stopping right away. Usually, you would want it to always restart. Use a while(1) in your launching script or Restart=always in your systemd service."
-        echo -e "\t-s | --script\t\t\t: Creates an example script example.sh that can be tweaked then used as a starting script compatible with cmd. You must allow execution on the newly created script, and it is better to rename it."
+        echo -e "\t-s | --setup\t\t\t: Creates an example script example.sh that can be tweaked then used as a starting script compatible with cmd. You must allow execution on the newly created script, and it is better to rename it."
         echo -e "\t-x | --execute [command]\t: Executes the desired command in the Minecraft server console"
 }
 
@@ -47,7 +48,7 @@ backup() {
 	execute "backup start"
 }
 
-script() {
+setup() {
 	read -p "Do you want to install java? [y/n] (default n) " var1
 	if [ ! -z $var1 ]; then
 		var1=$(echo "$var1" | tr '[:upper:]' '[:lower:]')
@@ -77,6 +78,7 @@ script() {
 	if [ -z $servername ]; then
 		servername=minecraftserver
 	fi
+	sed -i "/\!\!\!/c CMD_MINECRAFT_SERVER\=$servername #\!\!\! DO NOT MODIFY THIS COMMENT" $SCRIPTPATH
 	echo "CMD_MINECRAFT_SERVER=$servername #You can customize this name" >> example.sh
 	read -p "What is the absolute path of the directory the server will be in? " $serverdirectory
 	if [ -z $serverdirectory ]; then
@@ -126,8 +128,9 @@ if [ -n "$1" ]; then
 		-d|--detach   ) detach;;
 		-h|--help     ) help;;
 		-r|--restart  ) restart $2;;
-		-s|--script   ) script;;
+		-s|--setup    ) setup;;
 		-x|--execute  ) execute ${@:2};;
+		-w) echo $SCRIPTPATH;;
 		*             ) unrecognized;;
 	esac
 else
