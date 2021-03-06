@@ -48,28 +48,87 @@ backup() {
 }
 
 script() {
+	read -p "Do you want to install java? [y/n] (default n) " var1
+	if [ ! -z $var1 ]; then
+		var1=$(echo "$var1" | tr '[:upper:]' '[:lower:]')
+		if [ $var1 = "y" ]; then
+			if [ $EUID -ne 0 ]; then
+				echo "This part of the script must be executed as root!"
+				exit -1
+			else
+				apt install default-jre -y
+			fi
+		fi
+	fi
+	read -p "Do you want to install screen? [y/n] (default n) " var1
+	if [ ! -z $var1 ]; then
+		var1=$(echo "$var1" | tr '[:upper:]' '[:lower:]')
+		if [ $var1 = "y" ]; then
+			if [ $EUID -ne 0 ]; then
+				echo "This part of the script must be executed as root!"
+				exit -1
+			else
+				apt install screen -y
+			fi
+		fi
+	fi
 	echo "#!/bin/bash" > example.sh
-	echo "CMD_MINECRAFT_SERVER=minecraft #Customize this name" >> example.sh
-	echo "CMD_MINECRAFT_SERVER_PATH=/opt #Path of the server. Must be set correctly" >> example.sh
-	echo "CUSTOM_JAVA_VERSION=java #If you use a custom java version, set its path here. Else leave it as it is." >> example.sh
-	echo "CMD_MINECRAFT_SERVER_EXECUTABLE=minecraft_server.jar #Name of the jar executable. Must be set correctly." >> example.sh
-	echo "MAX_RAM=8G #Maximum RAM the server can use. Set it with your hardware specs." >> example.sh
-	echo "MIN_RAM=512M #Minimum RAM usage." >> example.sh
-	echo "SCREEN_PATH=/usr/bin/screen #Change this if your screen packet is not in /usr/bin/screen." >> example.sh
+	read -p "What is the name of the server? " servername
+	if [ -z $servername ]; then
+		servername=minecraftserver
+	fi
+	echo "CMD_MINECRAFT_SERVER=$servername #You can customize this name" >> example.sh
+	read -p "What is the absolute path of the directory the server will be in? " $serverdirectory
+	if [ -z $serverdirectory ]; then
+		serverdirectory=/opt/minecraftserver
+	fi
+	echo "CMD_MINECRAFT_SERVER_PATH=$serverdirectory #Path of the server. Must be set correctly" >> example.sh
+	read -p "If you are using a custom java version, enter its path. Else leave blank." customjavaversion
+	if [ -z $customjavaversion ]; then
+		customjavaversion=/usr/bin/java
+	fi
+	echo "CUSTOM_JAVA_VERSION=$customjavaversion #If you use a custom java version, set its path here. Else leave it as it is." >> example.sh
+	read -p "What is the name of the Minecraft server jar executable? (example: minecraft_server.jar) " serverexecutable
+	if [ -z $serverexecutable ]; then
+		serverexecutable=java
+	fi
+	echo "CMD_MINECRAFT_SERVER_EXECUTABLE=$serverexecutable #Name of the jar executable. Must be set correctly." >> example.sh
+	read -p "What is the maximum amount of RAM the server should use? (Syntax: 1G or 150M) " servermaxram
+	if [ -z $servermaxram ]; then
+		servermaxram=4G
+	fi
+	echo "MAX_RAM=$servermaxram #Maximum RAM the server can use. Set it with your hardware specs." >> example.sh
+	read -p "What is the minimum amount of RAM the server should use? (Syntax: 1G or 150M) " serverminram
+	if [ -z $serverminram ]; then
+		serverminram=1G
+	fi
+	echo "MIN_RAM=$serverminram #Minimum RAM usage." >> example.sh
+	read -p "If you are using a custom screen version, enter its path. Else leave blank." customscreenversion
+	if [ -z $customscreenversion ]; then
+		customscreenversion=/usr/bin/screen
+	fi
+	echo "SCREEN_PATH=$customscreenversion #Change this if your screen packet is not in /usr/bin/screen." >> example.sh
 	echo -e "\ncd $CMD_MINECRAFT_SERVER_PATH" >> example.sh
 	echo "$Screen_PATH -dmS $CMD_MINECRAFT_SERVER $CUSTOM_JAVA_VERSION -server -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -Xmx$MAX_RAM -Xms$MIN_RAM -jar $CMD_MINECRAFT_SERVER_PATH/$CMD_MINECRAFT_SERVER_EXECUTABLE nogui" >> example.sh
+	read -p "Do you want to launch the server now? [y/n] (default n) " var1
+	if [ ! -z $var1 ]; then
+		var1=$(echo "$var1" | tr '[:upper:]' '[:lower:]')
+		if [ $var1 = "y" ]; then
+			./example.sh
+		fi
+	fi
 }
 
 if [ -n "$1" ]; then
 	case "$1" in
-		-b|--backup     ) backup;;
-		-c|--connect	) connect;;
-		-d|--detach	) detach;;
-		-h|--help	) help;;
-		-r|--restart	) restart $2;;
-		-s|--script     ) script;;
-		-x|--execute	) execute ${@:2};;
-		*		) unrecognized;;
+		-b|--backup   ) backup;;
+		-c|--connect  ) connect;;
+		-d|--detach   ) detach;;
+		-h|--help     ) help;;
+		-r|--restart  ) restart $2;;
+		-s|--script   ) script;;
+		-x|--execute  ) execute ${@:2};;
+		*             ) unrecognized;;
 	esac
 else
 	connect
